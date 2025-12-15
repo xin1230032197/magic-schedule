@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ARCANE GRIMOIRE // 终极魔导书</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a12;
+            --text-main: #e0e0ff;
+            --text-dim: #6a6a8a;
+            
+            /* 魔导霓虹色谱 */
+            --arcane-cyan: #00f3ff;
+            --nature-green: #00ff41;
+            --fire-orange: #ff9d00;
+            --soul-pink: #ff0055;
+            --void-purple: #b026ff;
+            --magic-gold: #ffd700;
+            
+            --border-color: #2a2a3a;
+            --scanline: rgba(100, 100, 255, 0.04);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            /* 复合背景：扫描线 + 旋转法阵 */
+            background-image: 
+                linear-gradient(0deg, transparent 24%, var(--scanline) 25%, var(--scanline) 26%, transparent 27%, transparent 74%, var(--scanline) 75%, var(--scanline) 76%, transparent 77%, transparent), 
+                linear-gradient(90deg, transparent 24%, var(--scanline) 25%, var(--scanline) 26%, transparent 27%, transparent 74%, var(--scanline) 75%, var(--scanline) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden; /* 防止旋转背景撑开滚动条 */
+        }
+
+        /* 恢复：旋转的魔法阵背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 80vw;
+            height: 80vw;
+            max-width: 600px;
+            max-height: 600px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="rgba(0,243,255,0.1)" stroke-width="1" stroke-dasharray="5,5"/><path d="M50 2 L50 98 M2 50 L98 50" stroke="rgba(176,38,255,0.1)" stroke-width="0.5"/><polygon points="50,5 95,95 5,95" fill="none" stroke="rgba(0,243,255,0.05)" stroke-width="1"/><circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,0,85,0.05)" stroke-width="2"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            transform: translate(-50%, -50%);
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: -1;
+            animation: rotateRune 60s linear infinite;
+        }
+
+        @keyframes rotateRune {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .terminal-container {
+            max-width: 800px;
+            width: 100%;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            background: rgba(15, 15, 26, 0.9);
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            backdrop-filter: blur(5px);
+        }
+
+        .mana-crystal { color: var(--arcane-cyan); animation: pulseMana 2s infinite alternate; }
+        @keyframes pulseMana {
+            0% { text-shadow: 0 0 5px var(--arcane-cyan); opacity: 0.8; }
+            100% { text-shadow: 0 0 15px var(--arcane-cyan); opacity: 1; }
+        }
+
+        /* 标题区 */
+        .header {
+            padding: 25px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            background: rgba(17, 17, 26, 0.85);
+            margin-bottom: 20px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            margin: 0;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.8rem;
+            background: linear-gradient(to right, var(--arcane-cyan), var(--void-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 0px 10px rgba(0, 243, 255, 0.3);
+            line-height: 1.4;
+        }
+
+        /* 任务列表 */
+        .time-row {
+            display: flex;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            background: rgba(20, 20, 30, 0.7);
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            cursor: pointer;
+            border-radius: 4px;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 左侧能量条 */
+        .time-row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--accent-color, #fff);
+            transition: width 0.3s;
+        }
+
+        .time-row:active { transform: scale(0.98); }
+        .time-row:hover::before { width: 6px; box-shadow: 0 0 10px var(--accent-color); }
+
+        /* 完成状态 */
+        .time-row.completed {
+            background: rgba(255, 215, 0, 0.08);
+            border-color: var(--magic-gold);
+            box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.1);
+        }
+        .time-row.completed::before { background: var(--magic-gold); width: 6px; box-shadow: 0 0 15px var(--magic-gold); }
+
+        .time-stamp {
+            flex: 0 0 85px;
+            padding: 15px 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text-dim);
+            border-right: 1px solid var(--border-color);
+            font-family: 'Cinzel Decorative', cursive;
+            transition: color 0.3s;
+        }
+        .time-row.completed .time-stamp { color: var(--magic-gold); }
+
+        .task-detail {
+            flex: 1;
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .task-name {
+            font-size: 1.05rem;
+            color: var(--accent-color);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transition: color 0.3s;
+        }
+        .time-row.completed .task-name { color: var(--magic-gold) !important; text-shadow: 0 0 8px var(--magic-gold); }
+
+        .task-meta { font-size: 0.8rem; color: #888; line-height: 1.3; }
+
+        .check-mark {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%) scale(0);
+            font-size: 1.5rem;
+            color: var(--magic-gold);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 0 0 10px var(--magic-gold);
+        }
+        .time-row.completed .check-mark { transform: translateY(-50%) scale(1); opacity: 1; }
+
+        /* 类别配色变量注入 */
+        .type-math { --accent-color: var(--arcane-cyan); }
+        .type-eng { --accent-color: var(--nature-green); }
+        .type-cs { --accent-color: var(--fire-orange); }
+        .type-rest { --accent-color: var(--soul-pink); }
+        .type-sys { --accent-color: var(--void-purple); }
+
+        /* 分区标题 */
+        .section-header {
+            margin: 25px 0 10px 0;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .section-header::before {
+            content: '✦'; margin-right: 8px; color: var(--void-purple);
+        }
+
+        /* 周日特供模块 */
+        .sunday-block {
+            margin-top: 40px;
+            border: 2px dashed var(--void-purple);
+            padding: 15px;
+            background: rgba(176, 38, 255, 0.05);
+            position: relative;
+        }
+        .sunday-badge {
+            position: absolute;
+            top: -12px; left: 15px;
+            background: var(--bg-color);
+            color: var(--void-purple);
+            padding: 0 10px;
+            font-weight: bold;
+            font-family: 'Cinzel Decorative', cursive;
+            border: 1px solid var(--void-purple);
+        }
+
+        /* 底部按钮 */
+        .reset-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin-top: 30px;
+            background: transparent;
+            border: 1px solid var(--soul-pink);
+            color: var(--soul-pink);
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .reset-btn:hover { 
+            background: var(--soul-pink); 
+            color: #000; 
+            box-shadow: 0 0 25px var(--soul-pink); 
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container">
+        <div class="status-bar">
+            <span><span class="mana-crystal">✦</span> SYSTEM ONLINE</span>
+            <span>USER: 408_MAGUS</span>
+        </div>
+
+        <div class="header">
+            <h1>GRAND ARCANUM</h1>
+            <div style="font-size: 0.8rem; color: #666; margin-top:5px;">PROGRESS SAVED LOCALLY</div>
+        </div>
+
+        <div id="weekdayList">
+            <div class="section-header">AM // MORNING RITUAL</div>
+            
+            <div class="time-row type-rest" data-id="wd_0700" onclick="toggleTask(this)">
+                <div class="time-stamp">07:00</div>
+                <div class="task-detail">
+                    <div class="task-name">Awakening</div>
+                    <div class="task-meta">7.5H 睡眠充能完成</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-eng" data-id="wd_0730" onclick="toggleTask(this)">
+                <div class="time-stamp">07:30</div>
+                <div class="task-detail">
+                    <div class="task-name">Runes (Eng)</div>
+                    <div class="task-meta">单词晨读 / 闪存记忆</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-math" data-id="wd_0830" onclick="toggleTask(this)">
+                <div class="time-stamp">08:30</div>
+                <div class="task-detail">
+                    <div class="task-name">High Math</div>
+                    <div class="task-meta">数理逻辑构建 (深度)</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="section-header">PM // AFTERNOON GRIND</div>
+
+            <div class="time-row type-rest" data-id="wd_1130" onclick="toggleTask(this)">
+                <div class="time-stamp">11:30</div>
+                <div class="task-detail">
+                    <div class="task-name">Meditation</div>
+                    <div class="task-meta">午休充电 / 净化精神</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-cs" data-id="wd_1330" onclick="toggleTask(this)">
+                <div class="time-stamp">13:30</div>
+                <div class="task-detail">
+                    <div class="task-name">Data Structure</div>
+                    <div class="task-meta">数据结构矩阵构建</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-cs" data-id="wd_1555" onclick="toggleTask(this)">
+                <div class="time-stamp">15:55</div>
+                <div class="task-detail">
+                    <div class="task-name">Architecture</div>
+                    <div class="task-meta">计算机组成原理核心</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="section-header">NIGHT // FINAL RUSH</div>
+
+            <div class="time-row type-rest" data-id="wd_1800" onclick="toggleTask(this)">
+                <div class="time-stamp">18:00</div>
+                <div class="task-detail">
+                    <div class="task-name">Energy Boost</div>
+                    <div class="task-meta">炼金药剂(能量棒/巧克力)</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-math" data-id="wd_1815" onclick="toggleTask(this)">
+                <div class="time-stamp">18:15</div>
+                <div class="task-detail">
+                    <div class="task-name">Math Combat</div>
+                    <div class="task-meta">极限刷题模式 (2.75H)</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-sys" data-id="wd_2100" onclick="toggleTask(this)">
+                <div class="time-stamp">21:00</div>
+                <div class="task-detail">
+                    <div class="task-name">>> LOGOUT</div>
+                    <div class="task-meta">任务终止 / 打卡下班</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-cs" style="--accent-color: var(--magic-gold);" data-id="wd_2130" onclick="toggleTask(this)">
+                <div class="time-stamp">21:30</div>
+                <div class="task-detail">
+                    <div class="task-name" style="color:var(--magic-gold)">Reward Time</div>
+                    <div class="task-meta">泡面 & 追剧 / 精神愉悦</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+            
+             <div class="time-row type-rest" data-id="wd_2330" onclick="toggleTask(this)">
+                <div class="time-stamp">23:30</div>
+                <div class="task-detail">
+                    <div class="task-name">Sleep Ritual</div>
+                    <div class="task-meta">进入深度睡眠 / 存档</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+        </div>
+
+        <div class="sunday-block">
+            <span class="sunday-badge">SUNDAY PROTOCOL</span>
+            
+            <div class="time-row type-sys" data-id="sun_0830" onclick="toggleTask(this)">
+                <div class="time-stamp">08:30</div>
+                <div class="task-detail">
+                    <div class="task-name">System Repair</div>
+                    <div class="task-meta">本周错题整理 & 进度修补</div>
+                </div>
+                <div class="check-mark">✨</div>
+            </div>
+
+            <div class="time-row type-rest" data-id="sun_1130" onclick="toggleTask(this)">
+                <div class="time-stamp">11:30</div>
+                <div class="task-detail">
+                    <div class="task-name">OFFLINE MODE</div>
+                    <div class="task-meta">半日强制休假 / 拒绝内卷</div>
+                </div>
+                <div class="check-mark">💤</div>
+            </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">
+            ↻ RESET CRYSTAL (NEW DAY)
+        </button>
+    </div>
+
+    <script>
+        // 初始化：读取本地存储
+        document.addEventListener('DOMContentLoaded', () => {
+            const tasks = document.querySelectorAll('.time-row');
+            tasks.forEach(task => {
+                const id = task.getAttribute('data-id');
+                if (localStorage.getItem(id) === 'done') {
+                    task.classList.add('completed');
+                }
+            });
+        });
+
+        // 点击切换状态并保存
+        function toggleTask(element) {
+            const id = element.getAttribute('data-id');
+            element.classList.toggle('completed');
+            
+            // 震动反馈 (支持的安卓手机)
+            if (navigator.vibrate) navigator.vibrate(15);
+
+            if (element.classList.contains('completed')) {
+                localStorage.setItem(id, 'done');
+            } else {
+                localStorage.removeItem(id);
+            }
+        }
+
+        // 重置按钮
+        function resetAll() {
+            if(confirm("重置水晶状态？开启新的一天？\n(Reset all progress?)")) {
+                localStorage.clear();
+                const tasks = document.querySelectorAll('.time-row');
+                tasks.forEach(task => task.classList.remove('completed'));
+            }
+        }
+    </script>
+</body>
+</html>
