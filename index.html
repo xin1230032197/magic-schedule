@@ -117,6 +117,87 @@
             line-height: 1.4;
         }
 
+        /* --- 计时器模块样式 --- */
+        .timer-module {
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            background: rgba(20, 20, 30, 0.6);
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 计时器左侧装饰条 */
+        .timer-module::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--arcane-cyan);
+            box-shadow: 0 0 10px var(--arcane-cyan);
+        }
+
+        .timer-display {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 2rem;
+            color: var(--arcane-cyan);
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        
+        .timer-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        /* 计时器按钮组 */
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .timer-btn {
+            background: transparent;
+            border: 1px solid var(--text-dim);
+            color: var(--text-dim);
+            padding: 8px 16px;
+            font-family: 'Share Tech Mono', monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .timer-btn:hover {
+            border-color: var(--arcane-cyan);
+            color: var(--arcane-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+
+        .timer-btn.active {
+            border-color: var(--soul-pink);
+            color: var(--soul-pink);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
+        }
+        
+        /* 小号重置按钮 */
+        .timer-btn.reset-mini {
+            padding: 8px 12px;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
         /* 任务列表 */
         .time-row {
             display: flex;
@@ -265,6 +346,60 @@
             box-shadow: 0 0 25px var(--soul-pink); 
         }
 
+        /* --- 自定义模态框样式 (解决弹窗无效问题) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: rgba(10, 10, 20, 0.95);
+            border: 1px solid var(--soul-pink);
+            padding: 25px;
+            max-width: 300px;
+            width: 80%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.2);
+            position: relative;
+        }
+        .modal-box::before {
+            content: ''; position: absolute; top:0; left:0; right:0; height: 2px;
+            background: var(--soul-pink); box-shadow: 0 0 10px var(--soul-pink);
+        }
+        .modal-title {
+            color: var(--soul-pink);
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px var(--soul-pink);
+        }
+        .modal-text {
+            margin-bottom: 25px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .modal-btn-group { display: flex; gap: 15px; justify-content: center; }
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--text-dim);
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .modal-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .modal-btn.confirm { border-color: var(--soul-pink); color: var(--soul-pink); }
+        .modal-btn.confirm:hover { background: var(--soul-pink); color: #000; box-shadow: 0 0 15px var(--soul-pink); }
+
     </style>
 </head>
 <body>
@@ -278,6 +413,22 @@
         <div class="header">
             <h1>GRAND ARCANUM</h1>
             <div style="font-size: 0.8rem; color: #666; margin-top:5px;">PROGRESS SAVED LOCALLY</div>
+        </div>
+
+        <!-- 魔导计时模块 -->
+        <div class="timer-module">
+            <div>
+                <div class="timer-label">CHRONO-METER // 本日投入</div>
+                <div class="timer-display" id="display">00:00:00</div>
+            </div>
+            <div class="timer-controls">
+                <button class="timer-btn" id="toggleBtn" onclick="toggleTimer()">
+                    <span id="btnIcon">▶</span> <span id="btnText">INITIATE</span>
+                </button>
+                <button class="timer-btn reset-mini" onclick="tryResetTimer()" title="Reset Timer Only">
+                    ↺
+                </button>
+            </div>
         </div>
 
         <div id="weekdayList">
@@ -409,13 +560,160 @@
             </div>
         </div>
 
-        <button class="reset-btn" onclick="resetAll()">
+        <button class="reset-btn" onclick="tryResetAll()">
             ↻ RESET CRYSTAL (NEW DAY)
         </button>
     </div>
 
+    <!-- 自定义模态框结构 -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-box">
+            <div class="modal-title">SYSTEM ALERT</div>
+            <div class="modal-text" id="modalText">Message here</div>
+            <div class="modal-btn-group">
+                <button class="modal-btn" onclick="closeModal()">CANCEL</button>
+                <button class="modal-btn confirm" onclick="confirmAction()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 初始化：读取本地存储
+        // --- 全局变量 ---
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+
+        const display = document.getElementById('display');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+
+        // --- 模态框逻辑 (替代 confirm) ---
+        let pendingCallback = null;
+        const modal = document.getElementById('customModal');
+        const modalText = document.getElementById('modalText');
+
+        function showConfirm(text, callback) {
+            modalText.innerHTML = text.replace(/\n/g, '<br>');
+            pendingCallback = callback;
+            modal.style.display = 'flex';
+        }
+
+        function confirmAction() {
+            if (pendingCallback) pendingCallback();
+            closeModal();
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            pendingCallback = null;
+        }
+
+        // --- 计时器逻辑 ---
+        function loadTimer() {
+            const savedElapsed = localStorage.getItem('timerElapsed');
+            const savedRunning = localStorage.getItem('timerRunning');
+            const savedBase = localStorage.getItem('timerBase');
+
+            if (savedElapsed) elapsedTime = parseInt(savedElapsed);
+
+            // 恢复逻辑优化：如果是在运行中关闭的，我们需要补上这期间的时间差
+            // 为了简单且准确，我们假设用户离开期间计时器是暂停的，
+            // 或者继续使用“秒表”模式，只记录实际开启的时间。
+            // 这里维持之前的逻辑：仅当页面打开时才增加时间。
+            
+            if (savedRunning === 'true') {
+                isRunning = true;
+                updateBtnState(true);
+                startInterval();
+            } else {
+                updateDisplay(elapsedTime);
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            isRunning = true;
+            localStorage.setItem('timerRunning', 'true');
+            updateBtnState(true);
+            startInterval();
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            localStorage.setItem('timerRunning', 'false');
+            clearInterval(timerInterval);
+            updateBtnState(false);
+            localStorage.setItem('timerElapsed', elapsedTime);
+        }
+
+        function startInterval() {
+            clearInterval(timerInterval);
+            // 记录参考时间点：现在 - 已过时间
+            const baseTime = Date.now() - elapsedTime;
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                elapsedTime = now - baseTime;
+                updateDisplay(elapsedTime);
+                localStorage.setItem('timerElapsed', elapsedTime);
+            }, 1000);
+        }
+        
+        function tryResetTimer() {
+            showConfirm("仅重置计时器？\n(Reset Timer only?)", () => {
+                // 执行重置逻辑
+                isRunning = false;
+                clearInterval(timerInterval);
+                updateBtnState(false);
+                
+                elapsedTime = 0;
+                updateDisplay(0);
+                
+                // 强制更新存储
+                localStorage.setItem('timerRunning', 'false');
+                localStorage.setItem('timerElapsed', '0');
+            });
+        }
+
+        function updateDisplay(time) {
+            const diff = time;
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            const h = hours.toString().padStart(2, '0');
+            const m = minutes.toString().padStart(2, '0');
+            const s = seconds.toString().padStart(2, '0');
+
+            display.textContent = `${h}:${m}:${s}`;
+        }
+
+        function updateBtnState(running) {
+            if (running) {
+                toggleBtn.classList.add('active');
+                btnText.textContent = "SUSPEND";
+                btnIcon.textContent = "||";
+                toggleBtn.style.borderColor = "var(--soul-pink)";
+                toggleBtn.style.color = "var(--soul-pink)";
+            } else {
+                toggleBtn.classList.remove('active');
+                btnText.textContent = "INITIATE";
+                btnIcon.textContent = "▶";
+                toggleBtn.style.borderColor = "var(--text-dim)";
+                toggleBtn.style.color = "var(--text-dim)";
+            }
+        }
+
+        // --- 任务列表逻辑 ---
         document.addEventListener('DOMContentLoaded', () => {
             const tasks = document.querySelectorAll('.time-row');
             tasks.forEach(task => {
@@ -424,14 +722,13 @@
                     task.classList.add('completed');
                 }
             });
+            loadTimer();
         });
 
-        // 点击切换状态并保存
         function toggleTask(element) {
             const id = element.getAttribute('data-id');
             element.classList.toggle('completed');
             
-            // 震动反馈 (支持的安卓手机)
             if (navigator.vibrate) navigator.vibrate(15);
 
             if (element.classList.contains('completed')) {
@@ -441,13 +738,22 @@
             }
         }
 
-        // 重置按钮
-        function resetAll() {
-            if(confirm("重置水晶状态？开启新的一天？\n(Reset all progress?)")) {
+        function tryResetAll() {
+            showConfirm("重置水晶状态？开启新的一天？\n(Reset ALL progress?)", () => {
+                // 1. 清除所有数据
                 localStorage.clear();
+                
+                // 2. 视觉重置任务
                 const tasks = document.querySelectorAll('.time-row');
                 tasks.forEach(task => task.classList.remove('completed'));
-            }
+                
+                // 3. 视觉重置计时器
+                isRunning = false;
+                clearInterval(timerInterval);
+                updateBtnState(false);
+                elapsedTime = 0;
+                updateDisplay(0);
+            });
         }
     </script>
 </body>
