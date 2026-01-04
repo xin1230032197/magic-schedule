@@ -6,6 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>ARCANE GRIMOIRE // 终极魔导书</title>
+    <!-- 引入截图库 html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -190,13 +192,6 @@
             color: var(--soul-pink);
             box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
         }
-        
-        /* 小号重置按钮 */
-        .timer-btn.reset-mini {
-            padding: 8px 12px;
-            font-size: 1.2rem;
-            line-height: 1;
-        }
 
         /* 任务列表 */
         .time-row {
@@ -324,21 +319,42 @@
             border: 1px solid var(--void-purple);
         }
 
-        /* 底部按钮 */
-        .reset-btn {
+        /* 底部按钮群 */
+        .btn-group-bottom {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-btn {
             display: block;
             width: 100%;
             padding: 18px;
-            margin-top: 30px;
             background: transparent;
-            border: 1px solid var(--soul-pink);
-            color: var(--soul-pink);
             font-family: 'Share Tech Mono', monospace;
             text-transform: uppercase;
             cursor: pointer;
             letter-spacing: 2px;
             transition: all 0.3s;
             font-weight: bold;
+        }
+
+        /* 截图按钮样式 */
+        .screenshot-btn {
+            border: 1px solid var(--arcane-cyan);
+            color: var(--arcane-cyan);
+        }
+        .screenshot-btn:hover {
+            background: var(--arcane-cyan);
+            color: #000;
+            box-shadow: 0 0 25px var(--arcane-cyan);
+        }
+
+        /* 重置按钮样式 */
+        .reset-btn {
+            border: 1px solid var(--soul-pink);
+            color: var(--soul-pink);
         }
         .reset-btn:hover { 
             background: var(--soul-pink); 
@@ -404,7 +420,7 @@
 </head>
 <body>
 
-    <div class="terminal-container">
+    <div class="terminal-container" id="captureArea">
         <div class="status-bar">
             <span><span class="mana-crystal">✦</span> SYSTEM ONLINE</span>
             <span>USER: 408_MAGUS</span>
@@ -424,9 +440,6 @@
             <div class="timer-controls">
                 <button class="timer-btn" id="toggleBtn" onclick="toggleTimer()">
                     <span id="btnIcon">▶</span> <span id="btnText">INITIATE</span>
-                </button>
-                <button class="timer-btn reset-mini" onclick="tryResetTimer()" title="Reset Timer Only">
-                    ↺
                 </button>
             </div>
         </div>
@@ -559,10 +572,15 @@
                 <div class="check-mark">💤</div>
             </div>
         </div>
-
-        <button class="reset-btn" onclick="tryResetAll()">
-            ↻ RESET CRYSTAL (NEW DAY)
-        </button>
+        
+        <div class="btn-group-bottom">
+            <button class="action-btn screenshot-btn" onclick="captureScreenshot()">
+                [o] CAPTURE VISUAL DATA // 截图存档
+            </button>
+            <button class="action-btn reset-btn" onclick="tryResetAll()">
+                ↻ RESET CRYSTAL (NEW DAY)
+            </button>
+        </div>
     </div>
 
     <!-- 自定义模态框结构 -->
@@ -589,7 +607,7 @@
         const btnText = document.getElementById('btnText');
         const btnIcon = document.getElementById('btnIcon');
 
-        // --- 模态框逻辑 (替代 confirm) ---
+        // --- 模态框逻辑 ---
         let pendingCallback = null;
         const modal = document.getElementById('customModal');
         const modalText = document.getElementById('modalText');
@@ -610,19 +628,46 @@
             pendingCallback = null;
         }
 
+        // --- 截图逻辑 (html2canvas) ---
+        function captureScreenshot() {
+            const btn = document.querySelector('.screenshot-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "SCANNING DATA...";
+            
+            // 隐藏不需要截图的UI部分（例如按钮本身，如果不想被截进去的话，不过保留按钮也无所谓）
+            // 这里我们截取整个 document.body 确保背景完整
+            
+            html2canvas(document.body, {
+                backgroundColor: '#0a0a12', // 强制背景色，防止透明
+                scale: window.devicePixelRatio || 2, // 高清截图
+                useCORS: true, // 允许跨域图片
+                logging: false
+            }).then(canvas => {
+                // 创建下载链接
+                const link = document.createElement('a');
+                const date = new Date();
+                const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
+                
+                link.download = `Arcane_Grimoire_${dateStr}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                btn.innerText = originalText;
+            }).catch(err => {
+                console.error(err);
+                btn.innerText = "ERROR - RETRY";
+                setTimeout(() => btn.innerText = originalText, 2000);
+                alert("截图失败，请确保使用现代浏览器。");
+            });
+        }
+
         // --- 计时器逻辑 ---
         function loadTimer() {
             const savedElapsed = localStorage.getItem('timerElapsed');
             const savedRunning = localStorage.getItem('timerRunning');
-            const savedBase = localStorage.getItem('timerBase');
 
             if (savedElapsed) elapsedTime = parseInt(savedElapsed);
 
-            // 恢复逻辑优化：如果是在运行中关闭的，我们需要补上这期间的时间差
-            // 为了简单且准确，我们假设用户离开期间计时器是暂停的，
-            // 或者继续使用“秒表”模式，只记录实际开启的时间。
-            // 这里维持之前的逻辑：仅当页面打开时才增加时间。
-            
             if (savedRunning === 'true') {
                 isRunning = true;
                 updateBtnState(true);
@@ -657,7 +702,6 @@
 
         function startInterval() {
             clearInterval(timerInterval);
-            // 记录参考时间点：现在 - 已过时间
             const baseTime = Date.now() - elapsedTime;
             
             timerInterval = setInterval(() => {
@@ -666,22 +710,6 @@
                 updateDisplay(elapsedTime);
                 localStorage.setItem('timerElapsed', elapsedTime);
             }, 1000);
-        }
-        
-        function tryResetTimer() {
-            showConfirm("仅重置计时器？\n(Reset Timer only?)", () => {
-                // 执行重置逻辑
-                isRunning = false;
-                clearInterval(timerInterval);
-                updateBtnState(false);
-                
-                elapsedTime = 0;
-                updateDisplay(0);
-                
-                // 强制更新存储
-                localStorage.setItem('timerRunning', 'false');
-                localStorage.setItem('timerElapsed', '0');
-            });
         }
 
         function updateDisplay(time) {
@@ -740,14 +768,11 @@
 
         function tryResetAll() {
             showConfirm("重置水晶状态？开启新的一天？\n(Reset ALL progress?)", () => {
-                // 1. 清除所有数据
                 localStorage.clear();
                 
-                // 2. 视觉重置任务
                 const tasks = document.querySelectorAll('.time-row');
                 tasks.forEach(task => task.classList.remove('completed'));
                 
-                // 3. 视觉重置计时器
                 isRunning = false;
                 clearInterval(timerInterval);
                 updateBtnState(false);
