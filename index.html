@@ -106,6 +106,9 @@
             margin-bottom: 20px;
             backdrop-filter: blur(8px);
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
@@ -118,6 +121,21 @@
             text-shadow: 0px 0px 10px rgba(0, 243, 255, 0.3);
             line-height: 1.4;
         }
+
+        /* 日期显示样式 (新增) */
+        .date-display {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--arcane-cyan);
+            font-size: 1.1rem;
+            margin: 12px 0 8px 0;
+            padding: 5px 15px;
+            letter-spacing: 2px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0, 243, 255, 0.05);
+            width: fit-content;
+        }
+        .date-label { color: var(--text-dim); font-size: 0.8rem; margin-right: 5px; }
 
         /* --- 计时器模块样式 --- */
         .timer-module {
@@ -428,6 +446,10 @@
 
         <div class="header">
             <h1>GRAND ARCANUM</h1>
+            <!-- 新增：日期显示 -->
+            <div class="date-display" id="dateDisplay">
+                <span class="date-label">CYCLE:</span> LOADING...
+            </div>
             <div style="font-size: 0.8rem; color: #666; margin-top:5px;">PROGRESS SAVED LOCALLY</div>
         </div>
 
@@ -634,16 +656,12 @@
             const originalText = btn.innerText;
             btn.innerText = "SCANNING DATA...";
             
-            // 隐藏不需要截图的UI部分（例如按钮本身，如果不想被截进去的话，不过保留按钮也无所谓）
-            // 这里我们截取整个 document.body 确保背景完整
-            
             html2canvas(document.body, {
-                backgroundColor: '#0a0a12', // 强制背景色，防止透明
-                scale: window.devicePixelRatio || 2, // 高清截图
-                useCORS: true, // 允许跨域图片
+                backgroundColor: '#0a0a12', 
+                scale: window.devicePixelRatio || 2, 
+                useCORS: true, 
                 logging: false
             }).then(canvas => {
-                // 创建下载链接
                 const link = document.createElement('a');
                 const date = new Date();
                 const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
@@ -741,6 +759,20 @@
             }
         }
 
+        // --- 新增：日期更新逻辑 ---
+        function updateDate() {
+            const dateDisplay = document.getElementById('dateDisplay');
+            const now = new Date();
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const weekday = days[now.getDay()];
+
+            // 格式: CYCLE: [ 2023.10.27 // FRI ]
+            dateDisplay.innerHTML = `<span class="date-label">CYCLE:</span>[ <span style="color:#fff; font-weight:bold;">${year}.${month}.${day}</span> // <span style="color:var(--void-purple)">${weekday}</span> ]`;
+        }
+
         // --- 任务列表逻辑 ---
         document.addEventListener('DOMContentLoaded', () => {
             const tasks = document.querySelectorAll('.time-row');
@@ -751,6 +783,7 @@
                 }
             });
             loadTimer();
+            updateDate(); // 初始化日期
         });
 
         function toggleTask(element) {
@@ -778,6 +811,7 @@
                 updateBtnState(false);
                 elapsedTime = 0;
                 updateDisplay(0);
+                updateDate(); // 重置时也刷新一下日期
             });
         }
     </script>
